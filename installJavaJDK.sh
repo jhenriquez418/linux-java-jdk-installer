@@ -4,7 +4,7 @@
 #
 # MIT License
 # 
-# Copyright (c) 2018 Jose Henriquez
+# Copyright (c) 2018 Jose Henriquez [https://github.com/jhenriquez418/linux-java-jdk-installer]
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -54,14 +54,14 @@ validateParams()
 	if [[ -z $sourceFile && -z $sha256sum ]] || [[ "${sourceFile,,}" = "-h" ]] || [[ "${sourceFile,,}" = "-help" ]] ; then
 		# Print help...
 		echo ""
-		echo "Installs the provided the JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar contains a JDK folder.  Script can intall either an Oracle or OpenJDK 9 or greater JDK.  Installation script has been tested on Ubuntu.  Go to project [GitHub URL] for further info."
+		echo "Installs the provided the JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar contains a JDK folder.  Script can intall either an Oracle or OpenJDK 9 or greater JDK.  Installation script has been tested on Ubuntu.  Go to project home page (https://github.com/jhenriquez418/linux-java-jdk-installer) for further info."
 		echo ""
 		echo "Script must be executed with sudo.  For example:"
 		echo ""
 		echo "sudo ./installJavaJDK jdk-10_linux-x64_bin.tar.gz 0b14aaecd5323457bd15dc7798d08181ad04bad4156e55387ed714190912a9ce"
 		echo ""
 		echo "installJavaJDK version $scriptVersion"
-		echo "Copyright (c) 2018 Jose Henriquez [GitHuB project URL]"
+		echo "Copyright (c) 2018 Jose Henriquez [https://github.com/jhenriquez418/linux-java-jdk-installer]"
 		echo "MIT License"
 		echo ""
 		echo 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'

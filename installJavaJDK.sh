@@ -69,14 +69,14 @@ validateParams()
 		exit
 	fi
 		
-    echo "*-*-*-*-*     Validating script parameters     *-*-*-*-*"
-    echo ""
+	echo "*-*-*-*-*     Validating script parameters     *-*-*-*-*"
+	echo ""
 
-    # Confirm the user provided the JDK file name to process...
-    if [ -z $sourceFile ]; then 
+	# Confirm the user provided the JDK file name to process...
+	if [ -z $sourceFile ]; then 
 		echo "You must provide a JDK tar file to work with.  Validation failed!  Process will end."
 		exit
-    fi 
+	fi 
 
 	# Confirm the user provided the sha256sum value for the passed JDK...
 	if [ -z $sha256sum ]; then
@@ -97,12 +97,12 @@ validateParams()
 		fi
 	fi
 
-    # Verify the specified parameter file exists...
-    if [ ! -e "$sourceFile" ]; then
+	# Verify the specified parameter file exists...
+	if [ ! -e "$sourceFile" ]; then
 		echo "Source file [$sourceFile] does not exist in the current directory.  Validation failed!  Process will end."
 		exit
-    fi
-    echo "Specified source file [$sourceFile] exists in current processing directory!"
+	fi
+	echo "Specified source file [$sourceFile] exists in current processing directory!"
 
 	# Compare sha256 value...
 	shaSUM=$(sha256sum $sourceFile)
@@ -132,17 +132,17 @@ validateParams()
 	fi
 
 	# Future validation...
-    # Confirm JDK file is for the working Linux version, i.e. 32 or 64...
-    #if [ $sourceFile != $expectedFile ]; then
+	# Confirm JDK file is for the working Linux version, i.e. 32 or 64...
+	#if [ $sourceFile != $expectedFile ]; then
 	#	echo "Source file [$sourceFile] is not an JDK for this Linux version!"
 	#	exit
-    #fi
+	#fi
 
-    # If we're here is because all validations passed!
-    echo "Source file [$sourceFile] is a valid JDK file!"
+	# If we're here is because all validations passed!
+	echo "Source file [$sourceFile] is a valid JDK file!"
 	
-    echo "Input parameter validation passed!"
-    echo ""
+	echo "Input parameter validation passed!"
+	echo ""
 
 	# Before exiting, assigned the expected extracted directory...
 	jdkExtractedDir="jdk-$jdkVersion"
@@ -154,7 +154,7 @@ validateParams()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 isJavaInstalled() 
 {
-    echo "*-*-*-*-*     Checking system to see if JDK is installed     *-*-*-*-*"
+	echo "*-*-*-*-*     Checking system to see if JDK is installed     *-*-*-*-*"
 	echo 
 
 	declare -a installedJDK
@@ -197,10 +197,10 @@ isJavaInstalled()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 extractAndValidateJDK() 
 {
-    echo "*-*-*-*-*     Extracting JDK File     *-*-*-*-*"
-    echo
+	echo "*-*-*-*-*     Extracting JDK File     *-*-*-*-*"
+	echo
 
-    # Before extracting, make sure there is no JDK directory in the working folder...
+	# Before extracting, make sure there is no JDK directory in the working folder...
 	# For that, declare an array and read files that start with jdk-*
 	echo "Checking for previous JDK folders in working directory..."
 	declare -a jdkFiles
@@ -226,18 +226,18 @@ extractAndValidateJDK()
 		echo ""
 	fi
 
-    echo "Extracting JDK files..."
-    tar -xf $sourceFile
-    echo "Validating uncompressed tar file..."
-    if [ ! -d $jdkExtractedDir ]; then
+	echo "Extracting JDK files..."
+	tar -xf $sourceFile
+	echo "Validating uncompressed tar file..."
+	if [ ! -d $jdkExtractedDir ]; then
 		echo "No JDK $jdkVersion directory was extrated from the file!  Process will end."
 		exit
 	else
 		echo "Confirmed!  Extrated a valid JDK!"
 		echo
-    fi
-    echo "JDK was extracted!"
-    echo ""
+	fi
+	echo "JDK was extracted!"
+	echo ""
 
 }
 
@@ -247,22 +247,22 @@ extractAndValidateJDK()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 moveJDKToSysFolder() 
 {
-    echo "*-*-*-*-*     Moving JDK to system folder    *-*-*-*-*"
-    echo  
-    if [ ! -d "$systemJavaDir/jdk-$jdkVersion" ]; then
+	echo "*-*-*-*-*     Moving JDK to system folder    *-*-*-*-*"
+	echo  
+	if [ ! -d "$systemJavaDir/jdk-$jdkVersion" ]; then
 		echo "Creating JVM folder since Java is not installed..."
 		sudo mkdir -p "$systemJavaDir/jdk-$jdkVersion"
 		echo "Folder created!"
 
-    fi
+	fi
 
-    echo "Moving extracted JDK to [$systemJavaDir/jdk-$jdkVersion]..."
-    sudo rsync -rl $jdkExtractedDir"/" "$systemJavaDir/jdk-$jdkVersion"
-    echo "JDK moved to system folder!"
-    echo ""
-    rm -r -f $jdkExtractedDir
-    echo "Deleting extracted files..."
-    echo ""
+	echo "Moving extracted JDK to [$systemJavaDir/jdk-$jdkVersion]..."
+	sudo rsync -rl $jdkExtractedDir"/" "$systemJavaDir/jdk-$jdkVersion"
+	echo "JDK moved to system folder!"
+	echo ""
+	rm -r -f $jdkExtractedDir
+	echo "Deleting extracted files..."
+	echo ""
 
 }
 
@@ -416,7 +416,7 @@ removeCurrentConfiguration()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 configureJava() 
 {
-    if [ $javaIsInstalled = false ]; then
+	if [ $javaIsInstalled = false ]; then
 		echo "*-*-*-*-*     Configuring Java     *-*-*-*-*"
 		echo
 		echo "The following will be added to your alternatives: "
@@ -547,7 +547,7 @@ configureJava()
 		echo "Primary Java executables have been configured!"
 		echo ""
 
-    fi
+	fi
 
 }
 

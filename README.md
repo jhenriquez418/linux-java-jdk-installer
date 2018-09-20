@@ -36,9 +36,9 @@ l. **Move Extracted JDK to Folder**: moves the extracted JDK to `/usr/lib/jvm/jd
 l. **Configure JDK Programs**: configure the following programs using `update-alternatives`:
 
     * java
-	* javac
-	* jar
-	* javaws
+    * javac
+    * jar
+    * javaws
     * javadoc
     * jshell
     * jlink
@@ -67,10 +67,5 @@ Time permitting, looking to add the following functionality:
 ## License
 
 This script is provided under MIT license.
-
-
-
-
-
 
 

@@ -23,17 +23,17 @@ Executing it with no parameters, or `-h`, or `-help` will print the help.
 
 The script performs the following five functionalities:  
 
-l. **Validate Parameters**: based in the name, it will determine and inform you whether you're installing an OpenJDK or Oracle JDK.  It will then confirm the provided SHA256 sum value matches that for the provided JDK `tar` file.
+1. **Validate Parameters**: based in the name, it will determine and inform you whether you're installing an OpenJDK or Oracle JDK.  It will then confirm the provided SHA256 sum value matches that for the provided JDK `tar` file.
 
-l. **Extract JDK File**: extracts the provided JDK `tar`, and confirm, based on naming convention, whether the extracted folder is a JDK folder.
+2. **Extract JDK File**: extracts the provided JDK `tar`, and confirm, based on naming convention, whether the extracted folder is a JDK folder.
 
-l. **Check if JDK is Already Installed**: script extracted JDK are installed in `/usr/lib/jvm/jdk-*` folder.  The scripts checks if there are any versions of JDK installed that meets this criteria.
+3. **Check if JDK is Already Installed**: script extracted JDK are installed in `/usr/lib/jvm/jdk-*` folder.  The scripts checks if there are any versions of JDK installed that meets this criteria.
 
-l. **Removes Previous Versions**: if there are any versions of the JDK installed, the script will remove them.  This step also includes removing any previously configured `update-alternatives`.
+4. **Removes Previous Versions**: if there are any versions of the JDK installed, the script will remove them.  This step also includes removing any previously configured `update-alternatives`.
 
-l. **Move Extracted JDK to Folder**: moves the extracted JDK to `/usr/lib/jvm/jdk-*`.  For example if installing JDK 10, the folder will be `/usr/lib/jvm/jdk-10`.
+5. **Move Extracted JDK to Folder**: moves the extracted JDK to `/usr/lib/jvm/jdk-*`.  For example if installing JDK 10, the folder will be `/usr/lib/jvm/jdk-10`.
 
-l. **Configure JDK Programs**: configure the following programs using `update-alternatives`:
+6. **Configure JDK Programs**: configure the following programs using `update-alternatives`:
 
     * java
     * javac
@@ -48,7 +48,7 @@ l. **Configure JDK Programs**: configure the following programs using `update-al
     * jarsigner
     * jconsole
 
-l. **Run java -version**: last step of the installation, the script will run `java -version` to confirm the installed version was properly configured.
+7. **Run java -version**: last step of the installation, the script will run `java -version` to confirm the installed version was properly configured.
 
 ## What It Doesn't Do?
 

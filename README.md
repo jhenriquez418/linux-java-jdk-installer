@@ -17,7 +17,7 @@ The script expects two parameters, JDK `tar` file and SHA256 sum value.  You mus
 
     sudo ./installJavaJDK.sh jdk-10_linux-x64_bin.tar.gz 0b14aaecd5323457bd15dc7798d08181ad04bad4156e55387ed714190912a9ce
 
-Executing it no parameters, or `-h`, or `-help` will print the help.
+Executing it with no parameters, or `-h`, or `-help` will print the help.
 
 ## What It Does?
 

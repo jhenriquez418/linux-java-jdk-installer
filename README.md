@@ -1,7 +1,7 @@
 
 # Linux Java JDK Installer
 
-Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a script to install either OpenJDK or Oracle Java JDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. The idea behind it was to provide greater control on what version of the JDK is installed as well as greater security by not relying in PPAs.  It is, therefore, up to the user to download the correct bit version of the JDK from a reliable source, like [OpenJDK](http://openjdk.java.net/) or [Oracle](https://www.oracle.com/technetwork/java/index.html).
+Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a Bash script to install either OpenJDK or Oracle Java JDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. The idea behind it was to provide greater control on what version of the JDK is installed as well as greater security by not relying in PPAs.  It is, therefore, up to the user to download the correct bit version of the JDK from a reliable source, like [OpenJDK](http://openjdk.java.net/) or [Oracle](https://www.oracle.com/technetwork/java/index.html).
 
 The script does not support installing JDK 8 since it's end of life is right around the corner, January 2019.
 
@@ -58,7 +58,7 @@ The script does not setup Java to run in FireFox.  This was done intentionally s
 
 Time permitting, looking to add the following functionality:
 
-* Download OpenJDK requested version.  Unlike Oracle, OpenJDK URLs are consistent and there is no requirement to accept a license agreement.  This feature will come in handy with the new Java cadence - release every six months.
+* Download OpenJDK requested version.  Unlike Oracle, OpenJDK URLs are consistent and there is no requirement to accept a license agreement.  This feature will come in handy with the new Java cadence of six month releases.
 
 * Support to install multiple JDK versions.  On the same line, allow the ability switch between them.
 

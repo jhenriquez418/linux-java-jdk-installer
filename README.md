@@ -1,7 +1,7 @@
 
 # Linux Java JDK Installer
 
-Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a Bash script to install either OpenJDK or Oracle Java JDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. The idea behind it was to provide greater control on what version of the JDK is installed as well as greater security by not relying in PPAs.  It is, therefore, up to the user to download the correct bit version of the JDK from a reliable source, like [OpenJDK](http://openjdk.java.net/) or [Oracle](https://www.oracle.com/technetwork/java/index.html).
+Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a Bash script to install either OpenJDK or Oracle Java JDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. The idea behind it was to provide greater control on what version of the JDK is installed as well as greater security by not relying on PPAs.  It is, therefore, up to the user to download the correct bit version of the JDK from a reliable source, like [OpenJDK](http://openjdk.java.net/) or [Oracle](https://www.oracle.com/technetwork/java/index.html).
 
 The script does not support installing JDK 8 since it's end of life is right around the corner, January 2019.
 
@@ -13,7 +13,7 @@ Once you download the script file, grant execute permissions as follow:
 
     chmod +x installJavaJDK.sh
 
-The script expects two parameters, JDK `tar` file and SHA256 sum value.  You must run it with sudo.  For example,
+The script expects two parameters - JDK `tar` file and its SHA256 sum value.  You must run it with sudo.  For example,
 
     sudo ./installJavaJDK.sh jdk-10_linux-x64_bin.tar.gz 0b14aaecd5323457bd15dc7798d08181ad04bad4156e55387ed714190912a9ce
 

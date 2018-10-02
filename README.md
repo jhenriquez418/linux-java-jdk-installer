@@ -21,7 +21,7 @@ Executing it with no parameters, or `-h`, or `-help` will print the help.
 
 ## What It Does?
 
-The script performs the following five functionalities:  
+The script performs the following:  
 
 1. **Validate Parameters**: based in the name, it will determine and inform you whether you're installing an OpenJDK or Oracle JDK.  It will then confirm the provided SHA256 sum value matches that for the provided JDK `tar` file.
 

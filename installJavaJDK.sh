@@ -37,7 +37,7 @@ readonly SCRIPT_VERSION="1.1.0"
 # Global variables...
 currentJDKStatus=-1
 jdkInstalledVersion=""
-jdkToInstallVersion=""
+jdkVersionToInstall=""
 systemJavaDir="/usr/lib/jvm"
 
 isOpenJDK=true
@@ -75,7 +75,7 @@ validateParams()
 		exit
 	fi
 		
-	echo "*-*-*-*-*     Validating script parameters     *-*-*-*-*"
+	echo "*-*-*-*-*           Validating script parameters             *-*-*-*-*"
 	echo ""
 
 	# Confirm the user provided the JDK file name to process...
@@ -126,15 +126,15 @@ validateParams()
 
 	# Before continuing, extract the JDK version...
 	if [ $isOpenJDK = true ]; then
-		jdkToInstallVersion=$(echo ${sourceFile:8} | cut -d'_' -f 1)
+		jdkVersionToInstall=$(echo ${sourceFile:8} | cut -d'_' -f 1)
 
 		# Now, build my comparison string with the processor type for check & balances...
-		#printf -v expectedFile "openjdk-%s_linux-x%s_bin.tar.gz" $jdkToInstallVersion $processorType 
+		#printf -v expectedFile "openjdk-%s_linux-x%s_bin.tar.gz" $jdkVersionToInstall $processorType 
 	else
-		jdkToInstallVersion=$(echo ${sourceFile:4} | cut -d'_' -f 1)
+		jdkVersionToInstall=$(echo ${sourceFile:4} | cut -d'_' -f 1)
 	
 		# Now, build my comparison string with the processor type for check & balances...
-		#printf -v expectedFile "jdk-%s_linux-x%s_bin.tar.gz" $jdkToInstallVersion $processorType 
+		#printf -v expectedFile "jdk-%s_linux-x%s_bin.tar.gz" $jdkVersionToInstall $processorType 
 	fi
 
 	# Future validation...
@@ -151,14 +151,14 @@ validateParams()
 	echo ""
 
 	# Before exiting, assigned the expected extracted directory...
-	jdkExtractedDir="jdk-$jdkToInstallVersion"
+	jdkExtractedDir="jdk-$jdkVersionToInstall"
 }
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# Detect if Java is already installed
+# Detect if Java is already installed.  Returns 1 if it is, otherwise 0.
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-isJavaInstalled() 
+isJDKInstalled() 
 {
 	echo "*-*-*-*-*     Checking system to see if JDK is installed     *-*-*-*-*"
 	echo 
@@ -222,6 +222,11 @@ isJavaInstalled()
 	esac
 	echo ""
 
+	if [ $javaInstalledBy = $NOT_INSTALLED ]; then
+		return 0
+	fi
+
+	return 1
 }
 
 
@@ -230,7 +235,7 @@ isJavaInstalled()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 extractAndValidateJDK() 
 {
-	echo "*-*-*-*-*     Extracting JDK File     *-*-*-*-*"
+	echo "*-*-*-*-*                Extracting JDK File                 *-*-*-*-*"
 	echo
 
 	# Before extracting, make sure there is no JDK directory in the working folder...
@@ -263,7 +268,7 @@ extractAndValidateJDK()
 	tar -xf $sourceFile
 	echo "Validating uncompressed tar file..."
 	if [ ! -d $jdkExtractedDir ]; then
-		echo "No JDK $jdkToInstallVersion directory was extrated from the file!  Process will end."
+		echo "No JDK $jdkVersionToInstall directory was extrated from the file!  Please validate the provided tar file is for a JDK.  Process will end."
 		exit
 	else
 		echo "Confirmed!  Extrated a valid JDK!"
@@ -280,17 +285,17 @@ extractAndValidateJDK()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 moveJDKToSysFolder() 
 {
-	echo "*-*-*-*-*     Moving JDK to system folder    *-*-*-*-*"
+	echo "*-*-*-*-*            Moving JDK to system folder             *-*-*-*-*"
 	echo  
-	if [ ! -d "$systemJavaDir/jdk-$jdkToInstallVersion" ]; then
+	if [ ! -d "$systemJavaDir/jdk-$jdkVersionToInstall" ]; then
 		echo "Creating JVM folder since Java is not installed..."
-		sudo mkdir -p "$systemJavaDir/jdk-$jdkToInstallVersion"
+		sudo mkdir -p "$systemJavaDir/jdk-$jdkVersionToInstall"
 		echo "Folder created!"
 
 	fi
 
-	echo "Moving extracted JDK to [$systemJavaDir/jdk-$jdkToInstallVersion]..."
-	sudo rsync -rl $jdkExtractedDir"/" "$systemJavaDir/jdk-$jdkToInstallVersion"
+	echo "Moving extracted JDK to [$systemJavaDir/jdk-$jdkVersionToInstall]..."
+	sudo rsync -rl $jdkExtractedDir"/" "$systemJavaDir/jdk-$jdkVersionToInstall"
 	echo "JDK moved to system folder!"
 	echo ""
 	rm -r -f $jdkExtractedDir
@@ -301,20 +306,22 @@ moveJDKToSysFolder()
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# Remove existing configuration if java JDK is already installed
+# Remove existing configuration if JDK is already installed
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 removeCurrentConfiguration() 
 {
-readonly INSTALLED_BY_SCRIPT=1
-readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
+	# There are two conditions when we need to remove the configured alternatives - 
+	# INSTALLED_BY_SCRIPT and INSTALLED_POINTS_TO_ANOTHER_JDK!
 
-	if [ $javaIsInstalled = true ]; then
-		echo "*-*-*-*-*     Removing previous Java version links    *-*-*-*-*"
+	if [[ $currentJDKStatus = $INSTALLED_BY_SCRIPT  || $currentJDKStatus = $INSTALLED_POINTS_TO_ANOTHER_JDK ]]; then
+		echo "*-*-*-*-*     Removing previous JDK alternatives (links)     *-*-*-*-*"
 		echo ""
+
+		# Be a good citizen and only remove the alternatives that we have created!
 
 		# Removing java...
 		echo "java..."
-		sudo update-alternatives --quiet --remove-all "java"
+		sudo update-alternatives --quiet --remove "java" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/java" 
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -324,7 +331,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing javac...
 		echo "javac..."
-		sudo update-alternatives --quiet --remove-all "javac"
+		sudo update-alternatives --quiet --remove "javac" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/javac"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -334,7 +341,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jar...
 		echo "jar..."
-		sudo update-alternatives --quiet --remove-all "jar"
+		sudo update-alternatives --quiet --remove "jar" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jar"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -344,7 +351,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		#Configuring javadoc...
 		echo "javadoc..."
-		sudo update-alternatives --quiet --remove-all "javadoc"
+		sudo update-alternatives --quiet --remove "javadoc" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/javadoc"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -354,7 +361,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jshell...
 		echo "jshell..."
-		sudo update-alternatives --quiet --remove-all "jshell"
+		sudo update-alternatives --quiet --remove "jshell" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jshell"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -364,7 +371,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jlink...
 		echo "jlink..."
-		sudo update-alternatives --quiet --remove-all "jlink"
+		sudo update-alternatives --quiet --remove "jlink" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jlink"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -374,7 +381,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jmod...
 		echo "jmod..."
-		sudo update-alternatives --quiet --remove-all "jmod"
+		sudo update-alternatives --quiet --remove "jmod" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jmod"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -384,7 +391,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing javap...
 		echo "javap..."
-		sudo update-alternatives --quiet --remove-all "javap"
+		sudo update-alternatives --quiet --remove "javap" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/javap"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -394,7 +401,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jdeps...
 		echo "jdeps..."
-		sudo update-alternatives --quiet --remove-all "jdeps"
+		sudo update-alternatives --quiet --remove "jdeps" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jdeps"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -404,7 +411,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jarsigner...
 		echo "jarsigner..."
-		sudo update-alternatives --quiet --remove-all "jarsigner"
+		sudo update-alternatives --quiet --remove "jarsigner" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jarsigner"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -414,7 +421,7 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
 		# Removing jconsole...
 		echo "jconsole..."
-		sudo update-alternatives --quiet --remove-all "jconsole"
+		sudo update-alternatives --quiet --remove "jconsole" "$systemJavaDir/jdk-$jdkInstalledVersion/bin/jconsole"
 		if [ $? = 0 ]; then
 			echo "Removed!"
 		else
@@ -425,171 +432,154 @@ readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 		sudo rm -rf $systemJavaDir/jdk-$jdkInstalledVersion
 
 		echo ""
-		echo "Done!  Existing configuration have been removed!"
+		echo "Done!  Removed previously installed JDK version $jdkInstalledVersion configuration!"
 		echo ""
 
-		# Update our installed flag to false...
-		javaIsInstalled=false
 	fi
 
  }
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# Configure JDK program links (using alternatives)
+# Configure JDK program alternatives (links)
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-configureJava() 
+configureJDKUtilities() 
 {
-	if [ $javaIsInstalled = false ]; then
-		echo "*-*-*-*-*     Configuring Java     *-*-*-*-*"
-		echo
-		echo "The following will be added to your alternatives: "
-		echo ""
+	echo "*-*-*-*-*        Configuring atlernatives for new JDK        *-*-*-*-*"
+	echo
+	echo "The following will be added to your alternatives: "
+	echo ""
 
-		# Configuring java...
-		echo "java..."
-		sudo update-alternatives --quiet --install "/usr/bin/java" "java" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/java" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"java\"!"
-		fi
-		echo 
-
-		# Configuring javac...
-		echo "javac..."
-		sudo update-alternatives --quiet --install "/usr/bin/javac" "javac" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/javac" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"javac\"!"
-		fi
-		echo 
-
-		# Configuring jar...
-		echo "jar..."
-		sudo update-alternatives --quiet --install "/usr/bin/jar" "jar" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jar" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jar\"!"
-		fi
-		echo 
-
-		# Configuring javaws... available only in Oracle JDK!!!
-		if [ $isOpenJDK = false ]; then
-			echo "javaws..."
-			sudo update-alternatives --quiet --install "/usr/bin/javaws" "javaws" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/javaws" 1
-			if [ $? = 0 ]; then
-				echo "Configured!"
-			else
-				echo "Failed to configured \"javaws\"!"
-			fi
-			echo 
-		fi
-
-		# Configuring javadoc...
-		echo "javadoc..."
-		sudo update-alternatives --quiet --install "/usr/bin/javadoc" "javadoc" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/javadoc" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"javadoc\"!"
-		fi
-		echo 
-
-		# Configuring jshell...
-		echo "jshell..."
-		sudo update-alternatives --quiet --install "/usr/bin/jshell" "jshell" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jshell" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jshell\"!"
-		fi
-		echo 
-
-		# Configuring jlink...
-		echo "jlink..."
-		sudo update-alternatives --quiet --install "/usr/bin/jlink" "jlink" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jlink" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jlink\"!"
-		fi
-		echo 
-
-		# Configuring jmod...
-		echo "jmod..."
-		sudo update-alternatives --quiet --install "/usr/bin/jmod" "jmod" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jmod" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jmod\"!"
-		fi
-		echo 
-
-		# Configuring javap...
-		echo "javap..."
-		sudo update-alternatives --quiet --install "/usr/bin/javap" "javap" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/javap" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"javap\"!"
-		fi
-		echo 
-
-		# Configuring jdeps...
-		echo "jdeps..."
-		sudo update-alternatives --quiet --install "/usr/bin/jdeps" "jdeps" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jdeps" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jdeps\"!"
-		fi
-		echo 
-
-		# Configuring jarsigner...
-		echo "jarsigner..."
-		sudo update-alternatives --quiet --install "/usr/bin/jarsigner" "jarsigner" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jarsigner" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jarsigner\"!"
-		fi
-		echo 
-
-		# Configuring jconsole...
-		echo "jconsole..."
-		sudo update-alternatives --quiet --install "/usr/bin/jconsole" "jconsole" "$systemJavaDir/jdk-$jdkToInstallVersion/bin/jconsole" 1
-		if [ $? = 0 ]; then
-			echo "Configured!"
-		else
-			echo "Failed to configured \"jconsole\"!"
-		fi
-
-		echo ""	
-		echo "Primary Java executables have been configured!"
-		echo ""
-
+	# Configuring java...
+	echo "java..."
+	sudo update-alternatives --quiet --install "/usr/bin/java" "java" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/java" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"java\"!"
 	fi
+	echo 
+
+	# Configuring javac...
+	echo "javac..."
+	sudo update-alternatives --quiet --install "/usr/bin/javac" "javac" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/javac" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"javac\"!"
+	fi
+	echo 
+
+	# Configuring jar...
+	echo "jar..."
+	sudo update-alternatives --quiet --install "/usr/bin/jar" "jar" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jar" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jar\"!"
+	fi
+	echo 
+
+	# Configuring javadoc...
+	echo "javadoc..."
+	sudo update-alternatives --quiet --install "/usr/bin/javadoc" "javadoc" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/javadoc" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"javadoc\"!"
+	fi
+	echo 
+
+	# Configuring jshell...
+	echo "jshell..."
+	sudo update-alternatives --quiet --install "/usr/bin/jshell" "jshell" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jshell" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jshell\"!"
+	fi
+	echo 
+
+	# Configuring jlink...
+	echo "jlink..."
+	sudo update-alternatives --quiet --install "/usr/bin/jlink" "jlink" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jlink" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jlink\"!"
+	fi
+	echo 
+
+	# Configuring jmod...
+	echo "jmod..."
+	sudo update-alternatives --quiet --install "/usr/bin/jmod" "jmod" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jmod" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jmod\"!"
+	fi
+	echo 
+
+	# Configuring javap...
+	echo "javap..."
+	sudo update-alternatives --quiet --install "/usr/bin/javap" "javap" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/javap" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"javap\"!"
+	fi
+	echo 
+
+	# Configuring jdeps...
+	echo "jdeps..."
+	sudo update-alternatives --quiet --install "/usr/bin/jdeps" "jdeps" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jdeps" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jdeps\"!"
+	fi
+	echo 
+
+	# Configuring jarsigner...
+	echo "jarsigner..."
+	sudo update-alternatives --quiet --install "/usr/bin/jarsigner" "jarsigner" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jarsigner" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jarsigner\"!"
+	fi
+	echo 
+
+	# Configuring jconsole...
+	echo "jconsole..."
+	sudo update-alternatives --quiet --install "/usr/bin/jconsole" "jconsole" "$systemJavaDir/jdk-$jdkVersionToInstall/bin/jconsole" 1
+	if [ $? = 0 ]; then
+		echo "Configured!"
+	else
+		echo "Failed to configured \"jconsole\"!"
+	fi
+
+	echo ""	
+	echo "Primary JDK utilities have been configured!"
+	echo ""
 
 }
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# 					Main
+# 									Main
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 
 validateParams;
 extractAndValidateJDK;
-isJavaInstalled;
+isJDKInstalled;
 if [ $? = 1 ]; then
 	# It is!  Removing existing settings even if it's the same Java version; original install may have failed!
 	removeCurrentConfiguration;
 fi	
 
 moveJDKToSysFolder;
-configureJava;
+configureJDKUtilities;
 
 echo "Running java version to verify installation..."
 echo 

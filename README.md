@@ -23,13 +23,13 @@ Executing it with no parameters, or `-h`, or `-help` will print the help.
 
 The script performs the following:  
 
-1. **Validate Parameters**: based in the name, it will determine and inform you whether you're installing an OpenJDK or Oracle JDK.  It will then confirm the provided SHA256 sum value matches that for the provided JDK `tar` file.
+1. **Validate Parameters**: based in the name, it will determine and inform you whether you're installing an Oracle provided OpenJDK or Oracle JDK.  It will then confirm the provided SHA256 sum value matches that for the provided JDK `tar` file.
 
 2. **Extract JDK File**: extracts the provided JDK `tar`, and confirm, based on naming convention, whether the extracted folder is a JDK folder.
 
-3. **Check if JDK is Already Installed**: script extracted JDK are installed in `/usr/lib/jvm/jdk-*` folder.  The scripts checks if there are any versions of JDK installed that meets this criteria.
+3. **Check if JDK is Already Installed**: The scripts checks if there is a JDK installed by running `javac -version`.  If it successfully runs, it then checks how the installed JDK was configured by looking up the system's alternatives.  The script will only installed the specified JDK if there is no JDK installed or if the current one was configured through alternatives.
 
-4. **Removes Previous Versions**: if there are any versions of the JDK installed, the script will remove them.  This step also includes removing any previously configured `update-alternatives`.
+4. **Removes Previous Versions**: the script will remove the JDK it previously installed.  This step also includes removing configuration settings done through `update-alternatives`.
 
 5. **Move Extracted JDK to Folder**: moves the extracted JDK to `/usr/lib/jvm/jdk-*`.  For example if installing JDK 10, the folder will be `/usr/lib/jvm/jdk-10`.
 
@@ -38,7 +38,6 @@ The script performs the following:
     * java
     * javac
     * jar
-    * javaws
     * javadoc
     * jshell
     * jlink
@@ -58,11 +57,15 @@ The script does not setup Java to run in FireFox.  This was done intentionally s
 
 Time permitting, looking to add the following functionality:
 
-* Download OpenJDK requested version.  Unlike Oracle, OpenJDK URLs are consistent and there is no requirement to accept a license agreement.  This feature will come in handy with the new Java cadence of six month releases.
+* Add support to install OpenJDKs from [AdoptOpenJDK](https://adoptopenjdk.net/) and [Azul Systems](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk).  Now a days, there are more JDK providers the just Oracle.
 
-* Support to install multiple JDK versions.  On the same line, allow the ability switch between them.
+* Provide the ability to install a JDK without removing the current one.  Handy feature that will allow to install more than one JDK in order to evaluate it while still coding for a previous version.
 
-* Expand to other Linux versions.  Have the script create symbolic links in `/usr/bin` instead of using `update-alternatives`. 
+* Install JDK but do not configured to be the active version.  Goes hand-in-hand with the previous enhancement.  Again, install the latest or an early access to play with it, but do not change the system configurations to point to it.
+
+* Update system configurations to point to another JDK.  Still in the same theme... provide the ability to update system configurations to point to another installed JDK.  That means, for example, you can have version 14 and 15 installed, and easily switch configurations between one and the other.
+
+* Removed a specify JDK previously installed by the script.  This provide a clean way to remove an installed JDK that's no longer supported or just don't need.
 
 ## License
 

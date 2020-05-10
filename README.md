@@ -63,9 +63,9 @@ Time permitting, looking to add the following functionality:
 
 * Install JDK but do not configure it to be the active version.  Goes hand-in-hand with the previous enhancement.  Again, install the latest or an early access to play with it, but do not change the system configurations to point to it.
 
-* Update system configurations to point to another JDK.  Still in the same theme... provide the ability to update system configurations to point to another installed JDK.  That means, for example, you can have version 14 and 15 installed, and easily switch configurations between one and the other.
+* Update system configurations to point to another JDK.  Still on the same theme... provide the ability to update system configurations to point to another installed JDK.  That means, for example, you can have version 14 and 15 installed, and easily switch configurations between one and the other.
 
-* Removed a specify JDK previously installed by the script.  This provide a clean way to remove an installed JDK that's no longer supported or just don't need.
+* Removed a specific JDK previously installed by the script.  This provide a clean way to remove an installed JDK that's no longer supported or just don't need.
 
 ## License
 

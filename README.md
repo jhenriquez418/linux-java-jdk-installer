@@ -5,7 +5,7 @@ Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-c
 
 The script does not support installing JDK 8 since it's end of life is right around the corner, January 2019.
 
-It was tested in Ubuntu 14.04 LTS and 16.04 LTS.
+It was tested in Ubuntu 18.04 LTS.
 
 ## Usage
 
@@ -61,7 +61,7 @@ Time permitting, looking to add the following functionality:
 
 * Provide the ability to install a JDK without removing the current one.  Handy feature that will allow to install more than one JDK in order to evaluate it while still coding for a previous version.
 
-* Install JDK but do not configured to be the active version.  Goes hand-in-hand with the previous enhancement.  Again, install the latest or an early access to play with it, but do not change the system configurations to point to it.
+* Install JDK but do not configure it to be the active version.  Goes hand-in-hand with the previous enhancement.  Again, install the latest or an early access to play with it, but do not change the system configurations to point to it.
 
 * Update system configurations to point to another JDK.  Still in the same theme... provide the ability to update system configurations to point to another installed JDK.  That means, for example, you can have version 14 and 15 installed, and easily switch configurations between one and the other.
 

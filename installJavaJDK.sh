@@ -32,24 +32,225 @@ readonly INSTALLED_BY_SCRIPT=1
 readonly INSTALLED_NOT_CONFIGURED=2
 readonly INSTALLED_POINTS_TO_ANOTHER_JDK=3
 
-readonly SCRIPT_VERSION="1.1.0"
+# enumerator values for available commands...
+readonly INSTALL=0
+readonly DELETE=1
+readonly LIST=2
+
+# enumerator values for supported JDK providers...
+readonly ADOPTOPENJDK=0
+readonly ZULU=1
+readonly ORACLE=2
+readonly UNSUPPORTED=3
+
+# Open JDK provider file formats...
+readonly ADOPTOPENJDK_FILE_FORMAT="OpenJDK([0-9]){2,}U-jdk_x64_linux_(hotspot|openj9)_([0-9]){2,}(\.[0-9]){0,3}_([0-9]){1,3}(_openj9-([0-9]){1,3}(\.([0-9]){1,3}){2})?\.tar\.gz"
+readonly ZULU_FILE_FORMAT="zulu([0-9]){1,3}(\.([0-9]){1,3}){2}-ca-jdk([0-9]){2,}(\.[0-9]){0,3}-linux_x64.tar.gz"
+readonly ORACLE_FILE_FORMAT="openjdk-([0-9]){2,}(\.[0-9]){0,3}_linux-x64_bin.tar.gz"
+
+readonly SCRIPT_VERSION="1.2.0"
 
 # Global variables...
+processComand=-1
 currentJDKStatus=-1
+jdkTarSource=-1
 jdkInstalledVersion=""
 jdkVersionToInstall=""
 systemJavaDir="/usr/lib/jvm"
 
-isOpenJDK=true
+jdkProvider=$UNSUPPORTED
 processorType=$(getconf LONG_BIT)
 jdkExtractedDir=""
-
+keepPreviousJDK=false
+doNotConfigure=false
 
 # Assign parameters... 
-# $1 = JDK file
-# $2 = sha256sum value
-sourceFile=$1
-sha256sum=$2
+# JDK file
+sourceFile=""
+# JDK's sha256sum value
+sha256sum=""
+
+
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+# Prints the help info and exits the script...
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+printHelpAndExit()
+{
+	echo ""
+	echo "Installs the provided JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar file contains a JDK folder.  Script can intall JDKs version 9 or higher from AdoptOpenJDK, Oracle, or Zulu.  Installation script has been tested on Ubuntu.  Go to project home page (https://github.com/jhenriquez418/linux-java-jdk-installer) for further info."
+	echo ""
+	echo "Script must be executed with sudo.  For example:"
+	echo ""
+	echo "sudo ./installJavaJDK jdk-10_linux-x64_bin.tar.gz 0b14aaecd5323457bd15dc7798d08181ad04bad4156e55387ed714190912a9ce"
+	echo ""
+	echo ""
+	echo "The script provides the following parameter options when installing a JDK:"
+	echo ""
+	echo "  -h  prints this help.  This is the same as running the script without any parameters."
+	echo ""
+	echo "  -k  keep previously installed JDK when installing a new one, meaning it will not delete the JDK folder but will remove system configurations."
+	echo ""
+	echo "  -N  installs specified JDK but does not configure it as the default.  This option keeps the previously installed JDK and configurations settings."
+	echo ""
+	echo ""
+	echo "installJavaJDK version $SCRIPT_VERSION"
+	echo "Copyright (c) 2018 Jose Henriquez [https://github.com/jhenriquez418/linux-java-jdk-installer]"
+	echo "MIT License"
+	echo ""
+	echo 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
+	echo ""
+	exit
+
+}
+
+
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+# Assigns internal processing flags based on the passed parameters.  Function may
+# be called itself if processing paramters are group - i.e. -kN
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+readParameter()
+{
+	# Assigning parameters to variables for readability...
+	areBundled=$1
+	paramToProcess=$2
+
+	case  ${paramToProcess:0:1} in 
+		"h")
+			printHelpAndExit
+			;;
+
+		"k")
+			keepPreviousJDK=true
+			;;
+
+		"N")
+			doNotConfigure=true
+			keepPreviousJDK=true
+			;;
+
+		 * )
+			echo "Unknown parameter [${paramToProcess:0:1}].  Type -h for available options"
+			exit
+			;;
+	esac
+	
+	if [[ ${areBundled} = true && -n ${paramToProcess:1} ]]; then
+		readParameter true ${paramToProcess:1}
+		
+	fi 
+
+}
+
+
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+# Parses the passed script command line arguments to read the parameters (if any), 
+# source file, and sha256 value.
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+parseParameters()
+{
+	# Our special case, no parameters which means print help...
+	if [ $# = 0 ]; then
+		printHelpAndExit;
+
+	fi
+
+	# Default behavior is to install a JDK unless otherwise requested...
+	processCommand=$INSTALL
+
+	# Read any script options the user may have provided; they must be specifed first!
+	while [[ -n $1 && ${1:0:1} = '-' ]]
+	do
+		if [ -z ${1:2} ]; then
+			# Single parameter...
+			readParameter false ${1:1}
+		else
+			# Grouped parameters...
+			readParameter true ${1:1}
+		fi
+		shift
+	done
+	
+	# Next value is the source file, if provided...
+	if [ -n "$1" ]; then
+		sourceFile=$1
+		shift
+	fi
+
+	# Last, the SHA sum.  Again, if provided...
+	if [ -n "$1" ]; then
+		sha256sum=$1
+	fi
+
+}
+
+
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+# Determines the JDK source, i.e. AdoptOpenJDK, Zulu, or Oracle, and version based 
+# on the tar name.  Returns 0 (true) if it's invalid, otherwise 1 (false).
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+isNotValidJDKSource()
+{
+	# Run through the three supported open JDK format files to identify which one we're working with...
+	if [[ $sourceFile =~ $ADOPTOPENJDK_FILE_FORMAT ]]; then
+		echo "Source file is an AdoptOpenJDK...."
+		jdkVersionToInstall=$(echo $sourceFile | cut -d'_' -f 5)
+		# Location of what looks like a build number will be different depending if the JDK has openj9 or hotspot JVM...
+		if [[ $jdkToInstallVersion =~ "openj9" ]]; then
+			buildNumber=$(echo $sourceFile | cut -d'_' -f 6)
+		else
+			buildNumber=$(echo $sourceFile | cut -d'_' -f 6 | cut -d'.' -f 1)
+		fi
+		jdkExtractedDir="jdk-$jdkVersionToInstall+$buildNumber"
+		jdkProvider=$ADOPTOPENJDK
+	fi
+
+	if [[ $sourceFile =~ $ZULU_FILE_FORMAT ]]; then
+		echo "Source file is a Zulu JDK...."
+		jdkVersionToInstall=$(echo $sourceFile | cut -d'-' -f 3)
+		jdkVersionToInstall=${jdkVersionToInstall:3}
+		jdkExtractedDir=${sourceFile:0:${#sourceFile}-7}
+		jdkProvider=$ZULU_FILE_FORMAT
+	fi
+
+	if [[ $sourceFile =~ $ORACLE_FILE_FORMAT ]]; then
+		echo "Source file is an Oracle JDK...."
+		jdkVersionToInstall=$(echo ${sourceFile:8} | cut -d'_' -f 1)
+		jdkExtractedDir="jdk-$jdkVersionToInstall"
+		jdkProvider=$ORACLE	
+	fi
+
+	if [ $jdkProvider != $UNSUPPORTED ]; then
+		echo "JDK version number to install is [$jdkVersionToInstall]..."
+		return 1
+	fi
+
+	return 0
+
+}
+
+
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+# Validate provided sha256 value against the provided JDK file.  Returns 0 (true) if
+# it does not match, otherwise 1 (false).
+# *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+isInvalidShaSum()
+{
+	# Compare sha256 value...
+	shaSUM=$(sha256sum $sourceFile)
+	shaSumValue=${shaSUM:0:64}
+	shaSumFile=${shaSUM:66}
+
+	if [ "$sha256sum" != "$shaSumValue" ]; then
+		echo "Provided SHA sum value does not match the SHA value for the provided JDK file.  Validation failed!  Process will end."
+		return 0
+	elif [ "$sourceFile" != "$shaSumFile" ]; then
+		echo "SHA sum file name does not match the provided JDK file name.  Validation failed!  Process will end."
+		return 0
+	fi
+
+	return 1
+
+}
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
@@ -57,24 +258,6 @@ sha256sum=$2
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 validateParams() 
 {
-	if [[ -z $sourceFile && -z $sha256sum ]] || [[ "${sourceFile,,}" = "-h" ]] || [[ "${sourceFile,,}" = "-help" ]] ; then
-		# Print help...
-		echo ""
-		echo "Installs the provided the JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar contains a JDK folder.  Script can intall either an Oracle or Oracle provided OpenJDK 9 or greater.  Installation script has been tested on Ubuntu.  Go to project home page (https://github.com/jhenriquez418/linux-java-jdk-installer) for further info."
-		echo ""
-		echo "Script must be executed with sudo.  For example:"
-		echo ""
-		echo "sudo ./installJavaJDK jdk-10_linux-x64_bin.tar.gz 0b14aaecd5323457bd15dc7798d08181ad04bad4156e55387ed714190912a9ce"
-		echo ""
-		echo "installJavaJDK version $SCRIPT_VERSION"
-		echo "Copyright (c) 2018 Jose Henriquez [https://github.com/jhenriquez418/linux-java-jdk-installer]"
-		echo "MIT License"
-		echo ""
-		echo 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
-		echo ""
-		exit
-	fi
-		
 	echo "*-*-*-*-*           Validating script parameters             *-*-*-*-*"
 	echo ""
 
@@ -85,84 +268,49 @@ validateParams()
 	fi
 
 	# Confirm the user provided the JDK file name to process...
-	if [ -z $sourceFile ]; then 
+	if [ -z "$sourceFile" ]; then 
 		echo "You must provide a JDK tar file to work with.  Validation failed!  Process will end."
 		exit
 	fi 
 
 	# Confirm the user provided the sha256sum value for the passed JDK...
-	if [ -z $sha256sum ]; then
+	if [ -z "$sha256sum" ]; then
 		echo "You must provide the SHA256 value for the specified JDK.  Validation failed!  Process will end."
 		exit
 	fi
 
-	# Identify what JDK version we're installing, Oracle or JDK...
-	if [ ${sourceFile:0:4} = "jdk-" ]; then
-		isOpenJDK=false
-		echo "Source file is an Oracle JDK...."
-	else
-		if [ ${sourceFile:0:8} = "openjdk-" ]; then
-			echo "Source file is an OpenJDK..."
-		else
-			echo "Unknown JDK source!  Program will exit!"
-			exit
-		fi
+	# Validate the source JDK file against supported open JDKs...
+	if isNotValidJDKSource; then
+		echo "The specified [$sourceFile] JDK tar file is not from AdoptOpenJDK, Zulu, or Oracle.  The script cannot install this JDK.  Process will end."
+		exit
+		
 	fi
-
+	
 	# Verify the specified parameter file exists...
-	if [ ! -e "$sourceFile" ]; then
+	if [ ! -e $sourceFile ]; then
 		echo "Source file [$sourceFile] does not exist in the current directory.  Validation failed!  Process will end."
 		exit
 	fi
-	echo "Specified source file [$sourceFile] exists in current processing directory!"
+	echo "Specified source file [$sourceFile] exists in the specified directory!"
 
-	# Compare sha256 value...
-	shaSUM=$(sha256sum $sourceFile)
-	shaSumValue=${shaSUM:0:64}
-	shaSumFile=${shaSUM:66}
+	# Validate provided SHA256 sum value against file...
 	echo "Validating SHA256 value..."
-	if [ "$sha256sum" != "$shaSumValue" ]; then
-		echo "Provided SHA sum value does not match the SHA value for the provided JDK file.  Validation failed!  Process will end."
-		exit
-	elif [ "$sourceFile" != "$shaSumFile" ]; then
-		echo "SHA sum file name does not match the provided JDK file name.  Validation failed!  Process will end."
+	if isInvalidShaSum; then
 		exit
 	fi
 	echo "Provided value matched!"
 
-	# Before continuing, extract the JDK version...
-	if [ $isOpenJDK = true ]; then
-		jdkVersionToInstall=$(echo ${sourceFile:8} | cut -d'_' -f 1)
-
-		# Now, build my comparison string with the processor type for check & balances...
-		#printf -v expectedFile "openjdk-%s_linux-x%s_bin.tar.gz" $jdkVersionToInstall $processorType 
-	else
-		jdkVersionToInstall=$(echo ${sourceFile:4} | cut -d'_' -f 1)
-	
-		# Now, build my comparison string with the processor type for check & balances...
-		#printf -v expectedFile "jdk-%s_linux-x%s_bin.tar.gz" $jdkVersionToInstall $processorType 
-	fi
-
-	# Future validation...
-	# Confirm JDK file is for the working Linux version, i.e. 32 or 64...
-	#if [ $sourceFile != $expectedFile ]; then
-	#	echo "Source file [$sourceFile] is not an JDK for this Linux version!"
-	#	exit
-	#fi
-
 	# If we're here is because all validations passed!
-	echo "Source file [$sourceFile] is a valid JDK file!"
+	echo "Source file [$sourceFile] seems to be a JDK file from one of the supported vendors!"
 	
 	echo "Input parameter validation passed!"
 	echo ""
 
-	# Before exiting, assigned the expected extracted directory...
-	jdkExtractedDir="jdk-$jdkVersionToInstall"
 }
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# Detect if Java is already installed.  Returns 1 if it is, otherwise 0.
+# Detect if Java is already installed.  Returns true (0) if it is, otherwise false (1).
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 isJDKInstalled() 
 {
@@ -172,7 +320,6 @@ isJDKInstalled()
 	echo "Will confirm by checking if Java compiler (javac) is installed..."
 
 	# Get where system is looking for Java...
-#	jdkInstalledPath=$(`sudo --user=#$UID which javac`)
 	jdkInstalledPath=$(su -l -c "javac -version" $SUDO_USER)
 	if [ -z "$jdkInstalledPath" ]; then
 		# Got nothing, so Java is not set up in the system!
@@ -185,7 +332,7 @@ isJDKInstalled()
 
 		# This time will check Java instead...
 		jdkInstalledPath=$(sudo update-alternatives --display java | grep -i "link currently points to" | cut --characters=28-)
-		if [ -z $jdkInstalledPath ]; then
+		if [ -z "$jdkInstalledPath" ]; then
 			# We got nothing, so it's not configured through alternatives!
 			echo "It is not!"
 			currentJDKStatus=$INSTALLED_NOT_CONFIGURED
@@ -242,10 +389,10 @@ isJDKInstalled()
 	echo ""
 
 	if [[ $currentJDKStatus = $NOT_INSTALLED || $currentJDKStatus = $INSTALLED_NOT_CONFIGURED ]]; then
-		return 0
+		return 1
 	fi
 
-	return 1
+	return 0
 }
 
 
@@ -333,10 +480,18 @@ removeCurrentConfiguration()
 	# INSTALLED_BY_SCRIPT and INSTALLED_POINTS_TO_ANOTHER_JDK!
 
 	if [[ $currentJDKStatus = $INSTALLED_BY_SCRIPT  || $currentJDKStatus = $INSTALLED_POINTS_TO_ANOTHER_JDK ]]; then
-		echo "*-*-*-*-*         Removing previous JDK alternatives         *-*-*-*-*"
+		echo "*-*-*-*-*         Removing previous JDK configuration        *-*-*-*-*"
 		echo ""
 
+		if [[ $doNotConfigure = true ]]; then
+			echo "Requested not to configure new JDK, therefore keeping current JDK alternatives to point to the previously installed JDK..."
+			echo ""
+			return
+		fi
+
 		# Be a good citizen and only remove the alternatives that we have created!
+		echo "Removing configured alternatives..."
+		echo
 
 		# Removing java...
 		echo "java..."
@@ -446,9 +601,17 @@ removeCurrentConfiguration()
 		else
 			echo "Huummm... there was an error!  We'll continue anyway..."
 		fi
+		echo 
+		echo "Removed configured alternatives for previous installed JDK."
+		echo
 
-		# Delete current JDK...
-		sudo rm -rf $systemJavaDir/jdk-$jdkInstalledVersion
+		if [ $keepPreviousJDK = false ]; then
+			# User requested not to keep the previously installed JDK, so delete it...
+			sudo rm -rf $systemJavaDir/jdk-$jdkInstalledVersion
+			echo "Deleted previously installed JDK folder..."
+		else
+			echo "Previous installed JDK folder was not removed, as requested..."
+		fi
 
 		echo ""
 		echo "Done!  Removed previously installed JDK version $jdkInstalledVersion configuration!"
@@ -466,6 +629,14 @@ configureJDKUtilities()
 {
 	echo "*-*-*-*-*        Configuring alternatives for new JDK        *-*-*-*-*"
 	echo
+
+	if [ $doNotConfigure = true ]; then
+		# User requested not to configure the JDK, so exit!
+		echo "JDK utilities were not configured as requested!"
+		echo ""
+		return 0;
+	fi
+
 	echo "The following JDK utilities will be configured in the system's alternatives: "
 	echo ""
 
@@ -624,13 +795,13 @@ configureJDKUtilities()
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 # 									Main
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
+parseParameters "$@"
 
-validateParams;
-extractAndValidateJDK;
-isJDKInstalled;
-
+# We are here because the user wants to install the provided JDK - the default behavior of the script...
+validateParams
+extractAndValidateJDK
 # Do we need to remove any system configurations from a previosly installed JDK?
-if [ $? = 1 ]; then
+if isJDKInstalled; then
 	# Yes!  Removing existing settings even if it's the same Java version; original install may have failed!
 	removeCurrentConfiguration;
 fi	
@@ -640,10 +811,14 @@ if [ $currentJDKStatus = $INSTALLED_NOT_CONFIGURED ]; then
 	exit
 fi
 
-moveJDKToSysFolder;
-configureJDKUtilities;
+moveJDKToSysFolder
+configureJDKUtilities
 
-echo "Running java version to verify installation..."
+if [ $doNotConfigure = true ]; then
+	echo "Running 'java -version' to verify previously installed JDK is still configured..."
+else
+	echo "Running 'java -version' to verify new JDK installation..."
+fi
 echo 
 echo `java -version`
 

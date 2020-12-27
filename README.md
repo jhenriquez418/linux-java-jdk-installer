@@ -63,7 +63,7 @@ The script does not setup Java to run in FireFox.  This was done intentionally s
 
 Time permitting, looking to add the following functionality:
 
-* Removed current or a specific JDK previously installed by the script in order to provide a clean way to remove current or previously installed JDK, in case you want to use a version from a base repo, or that is no longer supported.
+* Removed current or a specific JDK previously installed by the script in order to provide a clean way to remove a JDK, in case you want to use a version from a base repo, or that is no longer supported.
 
 * Update system configurations to point to another JDK.  Provide the ability to update system configurations to point to another installed JDK installed by the script.  That means, for example, you can have version 14 and 15 installed, and easily switch configurations between one and the other.
 

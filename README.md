@@ -1,7 +1,7 @@
 
 # Linux Java JDK Installer
 
-Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a Bash script to install either an [AdoptOpenJDK](https://adoptopenjdk.net/), [Azul Systems](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk), or [Oracle](http://openjdk.java.net/) OpenJDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. What started as a way to provide greater control on what JDK version to install, without relying PPAs, has morphed into the ablity to install multiple JDKs from different sources.  Therefore, it is up to the user to download the correct bit version of the JDK from a reliable source.
+Based on the [askubuntu.com posting](https://askubuntu.com/questions/56104/how-can-i-install-sun-oracles-proprietary-java-jdk-6-7-8-or-jre), I created a Bash script to install either an [Adoptium](https://adoptium.net/), [Azul Systems](https://www.azul.com/downloads/zulu-community/?architecture=x86-64-bit&package=jdk), [IBM Semeru](https://developer.ibm.com/languages/java/semeru-runtimes/downloads) or [Oracle](http://openjdk.java.net/) OpenJDK version 9 or higher in Debian Linux.  The script does not download the JDK, at least not in this release. What started as a way to provide greater control on what JDK version to install, without relying PPAs, has morphed into the ablity to install multiple JDKs from different sources.  Therefore, it is up to the user to download the correct bit version of the JDK from a reliable source.
 
 The script does not support installing JDK 8 since it's end of life was originally January 2019.
 

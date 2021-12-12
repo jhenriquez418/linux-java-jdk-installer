@@ -38,13 +38,15 @@ readonly DELETE=1
 readonly LIST=2
 
 # enumerator values for supported JDK providers...
-readonly ADOPTOPENJDK=0
-readonly ZULU=1
+readonly ADOPTIUMJDK=0
+readonly IBM=1
 readonly ORACLE=2
-readonly UNSUPPORTED=3
+readonly ZULU=3
+readonly UNSUPPORTED=4
 
 # Open JDK provider file formats...
-readonly ADOPTOPENJDK_FILE_FORMAT="OpenJDK([0-9]){2,}U-jdk_x64_linux_(hotspot|openj9)_([0-9]){2,}(\.[0-9]){0,3}_([0-9]){1,3}(_openj9-([0-9]){1,3}(\.([0-9]){1,3}){2})?\.tar\.gz"
+readonly ADOPTIUMJDK_FILE_FORMAT="OpenJDK([0-9]){2,}U-jdk_x64_linux_hotspot_([0-9]){2,}(\.[0-9]){0,3}_([0-9]){1,3}\.tar\.gz"
+readonly IBM_SEMERU_FILE_FORMAT="ibm-semeru-open-jdk_x64_linux_([0-9]){2,}(\.[0-9]){0,2}_([0-9]){1,3}_openj9-([0-9]){1,3}(\.([0-9]){1,3}){2})?\.tar.gz"
 readonly ZULU_FILE_FORMAT="zulu([0-9]){1,3}(\.([0-9]){1,3}){2}-ca-jdk([0-9]){2,}(\.[0-9]){0,3}-linux_x64.tar.gz"
 readonly ORACLE_FILE_FORMAT="openjdk-([0-9]){2,}(\.[0-9]){0,3}_linux-x64_bin.tar.gz"
 
@@ -77,7 +79,7 @@ sha256sum=""
 printHelpAndExit()
 {
 	echo ""
-	echo "Installs the provided JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar file contains a JDK folder.  Script can intall JDKs version 9 or higher from AdoptOpenJDK, Oracle, or Zulu.  Installation script has been tested on Ubuntu.  Go to project home page (https://github.com/jhenriquez418/linux-java-jdk-installer) for further info."
+	echo "Installs the provided JDK.  It confirms the tar SHA256 sum matches that of the provided value and performs simple validation to verify the provided tar file contains a JDK folder.  Script can intall JDKs version 9 or higher from Adoptium, IBM, Oracle, or Zulu.  Installation script has been tested on Ubuntu.  Go to project home page (https://github.com/jhenriquez418/linux-java-jdk-installer) for further info."
 	echo ""
 	echo "Script must be executed with sudo.  For example:"
 	echo ""
@@ -185,29 +187,33 @@ parseParameters()
 
 
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
-# Determines the JDK source, i.e. AdoptOpenJDK, Zulu, or Oracle, and version based 
+# Determines the JDK source, i.e. ADOPTIUMJDK, Zulu, or Oracle, and version based 
 # on the tar name.  Returns 0 (true) if it's invalid, otherwise 1 (false).
 # *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*  
 isNotValidJDKSource()
 {
 	# Run through the three supported open JDK format files to identify which one we're working with...
-	if [[ $sourceFile =~ $ADOPTOPENJDK_FILE_FORMAT ]]; then
-		echo "Source file is an AdoptOpenJDK...."
+	if [[ $sourceFile =~ $ADOPTIUMJDK_FILE_FORMAT ]]; then
+		echo "Source file is an Adoptium JDK...."
 		jdkVersionToInstall=$(echo $sourceFile | cut -d'_' -f 5)
-		# Location of what looks like a build number will be different depending if the JDK has openj9 or hotspot JVM...
-		if [[ $jdkToInstallVersion =~ "openj9" ]]; then
-			buildNumber=$(echo $sourceFile | cut -d'_' -f 6)
-		else
-			buildNumber=$(echo $sourceFile | cut -d'_' -f 6 | cut -d'.' -f 1)
-		fi
+		buildNumber=$(echo $sourceFile | cut -d'_' -f 6 | cut -d'.' -f 1)
 		jdkExtractedDir="jdk-$jdkVersionToInstall+$buildNumber"
-		jdkProvider=$ADOPTOPENJDK
+		jdkProvider=$ADOPTIUMJDK
+	fi
+
+	if [[ $sourceFile =~ $IBM_SEMERU_FILE_FORMAT ]]; then
+		echo "Source file is a IBM Semeru JDK...."
+		jdkVersionToInstall=$(echo $sourceFile | cut -d'_' -f 4)
+		buildNumber=$(echo $sourceFile | cut -d'_' -f 5)
+		jdkExtractedDir="jdk-$jdkVersionToInstall+$buildNumber"
+		jdkProvider=$IBM_SEMERU_FILE_FORMAT
 	fi
 
 	if [[ $sourceFile =~ $ZULU_FILE_FORMAT ]]; then
 		echo "Source file is a Zulu JDK...."
 		jdkVersionToInstall=$(echo $sourceFile | cut -d'-' -f 3)
 		jdkVersionToInstall=${jdkVersionToInstall:3}
+		buildNumber=$(echo $sourceFile | cut -d'_' -f 6)
 		jdkExtractedDir=${sourceFile:0:${#sourceFile}-7}
 		jdkProvider=$ZULU_FILE_FORMAT
 	fi
@@ -281,7 +287,7 @@ validateParams()
 
 	# Validate the source JDK file against supported open JDKs...
 	if isNotValidJDKSource; then
-		echo "The specified [$sourceFile] JDK tar file is not from AdoptOpenJDK, Zulu, or Oracle.  The script cannot install this JDK.  Process will end."
+		echo "The specified [$sourceFile] JDK tar file is not from Adoptium, IBM, Oracle, or Zulu.  The script cannot install this JDK.  Process will end."
 		exit
 		
 	fi

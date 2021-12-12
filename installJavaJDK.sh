@@ -50,7 +50,7 @@ readonly IBM_SEMERU_FILE_FORMAT="ibm-semeru-open-jdk_x64_linux_([0-9]){2,}(\.[0-
 readonly ZULU_FILE_FORMAT="zulu([0-9]){1,3}(\.([0-9]){1,3}){2}-ca-jdk([0-9]){2,}(\.[0-9]){0,3}-linux_x64.tar.gz"
 readonly ORACLE_FILE_FORMAT="openjdk-([0-9]){2,}(\.[0-9]){0,3}_linux-x64_bin.tar.gz"
 
-readonly SCRIPT_VERSION="1.2.0"
+readonly SCRIPT_VERSION="1.3.0"
 
 # Global variables...
 processComand=-1
